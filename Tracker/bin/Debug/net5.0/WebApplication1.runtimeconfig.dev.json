@@ -1,0 +1,8 @@
+{
+  "runtimeOptions": {
+    "additionalProbingPaths": [
+      "/home/knantro/.dotnet/store/|arch|/|tfm|",
+      "/home/knantro/.nuget/packages"
+    ]
+  }
+}
