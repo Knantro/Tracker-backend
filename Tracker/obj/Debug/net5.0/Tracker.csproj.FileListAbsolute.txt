@@ -75,3 +75,10 @@
 /home/knantro/dev/Tracker/Tracker/bin/Debug/net5.0/runtimes/win-x86/native/sni.dll
 /home/knantro/dev/Tracker/Tracker/bin/Debug/net5.0/runtimes/unix/lib/netcoreapp2.1/System.Data.SqlClient.dll
 /home/knantro/dev/Tracker/Tracker/bin/Debug/net5.0/runtimes/win/lib/netcoreapp2.1/System.Data.SqlClient.dll
+/home/knantro/dev/Tracker/Tracker/bin/Debug/net5.0/System.Net.Http.Formatting.dll
+/home/knantro/dev/Tracker/Tracker/bin/Debug/net5.0/System.Web.Http.dll
+/home/knantro/dev/Tracker/Tracker/bin/Debug/net5.0/System.Web.Http.Owin.dll
+/home/knantro/dev/Tracker/Tracker/bin/Debug/net5.0/Microsoft.Owin.dll
+/home/knantro/dev/Tracker/Tracker/bin/Debug/net5.0/Newtonsoft.Json.dll
+/home/knantro/dev/Tracker/Tracker/bin/Debug/net5.0/Newtonsoft.Json.Bson.dll
+/home/knantro/dev/Tracker/Tracker/bin/Debug/net5.0/Owin.dll

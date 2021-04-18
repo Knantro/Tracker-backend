@@ -70,3 +70,10 @@
 /home/knantro/dev/Tracker/TestConnectionDB/obj/Debug/net5.0/ref/TestConnectionDB.dll
 /home/knantro/dev/Tracker/TestConnectionDB/obj/Debug/net5.0/TestConnectionDB.pdb
 /home/knantro/dev/Tracker/TestConnectionDB/obj/Debug/net5.0/TestConnectionDB.genruntimeconfig.cache
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/System.Net.Http.Formatting.dll
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/System.Web.Http.dll
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/System.Web.Http.Owin.dll
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/Microsoft.Owin.dll
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/Newtonsoft.Json.dll
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/Newtonsoft.Json.Bson.dll
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/Owin.dll

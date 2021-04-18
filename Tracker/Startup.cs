@@ -1,19 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Web;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 
 namespace Tracker {
@@ -22,17 +15,22 @@ namespace Tracker {
             Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; }
+        public static IConfiguration Configuration { private set; get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services) {
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddMicrosoftIdentityWebApi(Configuration.GetSection("AzureAdB2C"));
-            services.AddScoped<Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptions, Microsoft.EntityFrameworkCore.DbContextOptions<TrackerContext>>();
+            // services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            //         .AddCookie(options =>
+            //         {
+            //             options.LoginPath = new Microsoft.AspNetCore.Http.PathString("api/Login");
+            //         });
+            //
+            services.AddScoped<Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptions, DbContextOptions<TrackerContext>>();
             services.AddControllers();
+            services.AddMvc(c => c.Conventions.Add(new ApiExplorerIgnores()));
             services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo {Title = "Tracker", Version = "v1"}); });
             services.AddDbContext<TrackerContext>(options =>
-                options.UseMySql(Configuration.GetConnectionString("TrackerContext"), 
+                options.UseMySql(Configuration.GetConnectionString("TrackerContext"),
                     new MySqlServerVersion(new Version(10, 5, 9))));
         }
 
@@ -43,15 +41,25 @@ namespace Tracker {
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tracker v1"));
             }
-
-            app.UseHttpsRedirection();
-
             app.UseRouting();
-
-            app.UseAuthentication();
+            
             app.UseAuthorization();
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+            app.UseHttpsRedirection();
+            
+            app.UseAuthentication();
+            
+            app.UseEndpoints(endpoints => {
+                endpoints.MapControllers();
+            });
+        }
+    }
+
+    public class ApiExplorerIgnores : IActionModelConvention {
+        public void Apply(ActionModel action)
+        {
+            if (action.Controller.ControllerName.Equals("Pwa"))
+                action.ApiExplorer.IsVisible = false;
         }
     }
 }
