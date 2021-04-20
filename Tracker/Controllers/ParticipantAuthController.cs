@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.Linq;
-using Tracker.Models;
+using Tracker.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Tracker.Models;
 
 namespace Tracker.Controllers {
     [ApiController]
@@ -8,39 +10,54 @@ namespace Tracker.Controllers {
     public class ParticipantAuthController : ControllerBase { 
         [HttpPost]
         public ActionResult Login(int id) {
+            if (!ModelState.IsValid) {
+                return BadRequest(ModelState);
+            }
+
             using TrackerContext db = new();
             Participant participant = db.Participant.FirstOrDefault(p =>
                 p.ID.Equals(id)
             );
 
+            if (db.UserToken.FirstOrDefault(u => u.ParticipantID == id) != null) {
+                return BadRequest("You're already authorized");
+            }
+
             if (participant != null) {
                 string token = string.Empty;
                 do {
-                    token = TokenGeneration.GenerateToken();
+                    token = TokenManagement.GenerateToken();
                 } while (db.UserToken.FirstOrDefault(t => t.Token.Equals(token)) != null);
                 UserToken ut = new () {
                     ParticipantID = participant.ID,
+                    Token = token
                 };
                 db.UserToken.Add(ut);
                 db.SaveChanges();
-                return Ok(ut.Token);
+
+                Researcher researcher = db.Researcher.FirstOrDefault(r =>
+                    r.ID == db.Project.First(p => p.ID == participant.ProjectID).ResearcherID);
+                
+                var researcherModel = new ResearcherModel() {
+                    Nickname = researcher.Nickname,
+                    Email = researcher.Email,
+                    PhoneNumber = researcher.PhoneNumber,
+                    ID = participant.ID,
+                    Token = token
+                };
+                return Ok(researcherModel);
             }
 
             return BadRequest("Login attempt failed");
         }
 
-        // [HttpGet]
-        // public ActionResult GetQuestions(string token) {
-        //     
-        // }
-        
         [HttpPost]
         public ActionResult Logout(string token) {
             using TrackerContext db = new();
             UserToken ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             
             if (ut is null) {
-                return Unauthorized();
+                return Unauthorized("You're not authorized");
             }
 
             db.UserToken.Remove(ut);

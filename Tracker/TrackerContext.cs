@@ -1,14 +1,14 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Tracker.Models;
+using Tracker.Entities;
 
 namespace Tracker {
     public class TrackerContext : DbContext {
         public DbSet<AffectGridQuestion> AffectGridQuestion { get; set; }
-        public DbSet<ChoiceQuestion> ChoiceQuestion { get; set; }
+        public DbSet<ChooseQuestion> ChooseQuestion { get; set; }
         public DbSet<DiscreteSliderQuestion> DiscreteSliderQuestion { get; set; }
-        public DbSet<MultipleChoiseQuestionVariant> MultipleChoiseQuestionVariant { get; set; }
+        public DbSet<MultipleChooseQuestionVariant> MultipleChooseQuestionVariant { get; set; }
         public DbSet<Participant> Participant { get; set; }
         public DbSet<ParticipantAnswer> ParticipantAnswer { get; set; }
         public DbSet<ParticipantStatus> ParticipantStatus { get; set; }

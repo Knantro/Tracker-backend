@@ -1,4 +1,4 @@
-namespace Tracker.Models {
+namespace Tracker.Entities {
     public class Researcher {
         public int ID { get; set; }
         public string Nickname { get; set; }

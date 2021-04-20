@@ -1,4 +1,4 @@
-namespace Tracker.Models {
+namespace Tracker.Entities {
     public class SliderQuestion {
         public int ID { get; set; }
         public int? QuestionID { get; set; }

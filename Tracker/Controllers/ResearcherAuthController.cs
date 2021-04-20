@@ -1,6 +1,7 @@
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Tracker.Models;
+using Tracker.Entities;
 
 namespace Tracker.Controllers {
     [ApiController]
@@ -8,6 +9,10 @@ namespace Tracker.Controllers {
     public class ResearcherAuthController : ControllerBase { 
         [HttpPost]
         public ActionResult Login([FromBody]LoginModel loginModel) {
+            if (!ModelState.IsValid) {
+                return BadRequest(ModelState);
+            }
+            
             using TrackerContext db = new();
             Researcher researcher = db.Researcher.FirstOrDefault(r =>
                 (r.Email.Equals(loginModel.EmailOrPhoneNumber) || 
@@ -16,9 +21,12 @@ namespace Tracker.Controllers {
             );
 
             if (researcher != null) {
+                if (db.UserToken.FirstOrDefault(u => u.ResearcherID == researcher.ID) != null) {
+                    return BadRequest("You're already authorized");
+                }
                 string token = string.Empty;
                 do {
-                    token = TokenGeneration.GenerateToken();
+                    token = TokenManagement.GenerateToken();
                 } while (db.UserToken.FirstOrDefault(t => t.Token.Equals(token)) != null);
                 UserToken ut = new () {
                     ResearcherID = researcher.ID,
@@ -26,7 +34,14 @@ namespace Tracker.Controllers {
                 };
                 db.UserToken.Add(ut);
                 db.SaveChanges();
-                return Ok(ut.Token);
+                var researcherModel = new ResearcherModel() {
+                    Nickname = researcher.Nickname,
+                    Email = researcher.Email,
+                    PhoneNumber = researcher.PhoneNumber,
+                    ID = researcher.ID,
+                    Token = token
+                };
+                return Ok(researcherModel);
             }
 
             return BadRequest("Login attempt failed");
@@ -38,7 +53,7 @@ namespace Tracker.Controllers {
             UserToken ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             
             if (ut is null) {
-                return Unauthorized();
+                return Unauthorized("You're not authorized");
             }
 
             db.UserToken.Remove(ut);

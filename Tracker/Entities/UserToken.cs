@@ -1,4 +1,4 @@
-namespace Tracker.Models {
+namespace Tracker.Entities {
     public class UserToken {
         public int ID { get; set; }
         public int? ParticipantID { get; set; }

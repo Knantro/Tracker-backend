@@ -1,7 +1,7 @@
 using System;
 
 namespace Tracker {
-    public static class TokenGeneration {
+    public static class TokenManagement {
         public static Random rand = new();
         
         public static string GenerateToken() {
