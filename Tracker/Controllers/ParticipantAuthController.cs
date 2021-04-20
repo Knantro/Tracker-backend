@@ -35,17 +35,23 @@ namespace Tracker.Controllers {
                 db.UserToken.Add(ut);
                 db.SaveChanges();
 
-                Researcher researcher = db.Researcher.FirstOrDefault(r =>
+                Researcher researcher = db.Researcher.First(r =>
                     r.ID == db.Project.First(p => p.ID == participant.ProjectID).ResearcherID);
                 
-                var researcherModel = new ResearcherModel() {
+                var participantInfo = new ParticipantInfoModel() {
                     Nickname = researcher.Nickname,
                     Email = researcher.Email,
                     PhoneNumber = researcher.PhoneNumber,
                     ID = participant.ID,
-                    Token = token
+                    Token = token,
+                    NotificationCountPerDay = participant.NotificationCountPerDay,
+                    NotificationMinValueVariation = participant.NotificationMinValueVariation,
+                    ParticipantStatus = db.ParticipantStatus.First(s => s.ID == participant.ParticipantStatusID).StatusText,
+                    ProjectID = participant.ProjectID,
+                    TimeNotificationEnd = participant.TimeNotificationEnd,
+                    TimeNotificationStart = participant.TimeNotificationStart
                 };
-                return Ok(researcherModel);
+                return Ok(participantInfo);
             }
 
             return BadRequest("Login attempt failed");

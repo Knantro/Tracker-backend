@@ -34,6 +34,40 @@ namespace Tracker.Controllers {
             return Ok(MakeListQuestionModel(questions));
         }
 
+        [HttpPost]
+        public ActionResult SendAnswer([FromBody]ParticipantAnswer model, string token) {
+            using TrackerContext db = new();
+            var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
+            if (ut is null) {
+                return Unauthorized("You're not authorized");
+            }
+            
+            var participant = db.Participant.FirstOrDefault(p => p.ID == ut.ParticipantID);
+            if (participant is null) {
+                return BadRequest("Cannot find participant with current id");
+            }
+            
+            var project = db.Project.FirstOrDefault(p => p.ID == participant.ProjectID);
+            if (project is null) {
+                return BadRequest("Cannot find project for current participant");
+            }
+
+            var question = db.Question.FirstOrDefault(q => q.ID == model.QuestionID);
+            if (question is null) {
+                return BadRequest("Question not found");
+            }
+
+            try {
+                db.ParticipantAnswer.Add(model);
+                db.SaveChanges();
+            }
+            catch (Exception ex) {
+                return BadRequest(ex);
+            }
+
+            return Ok();
+        }
+
         private List<object> MakeListQuestionModel(List<Question> questions) {
             using TrackerContext db = new();
             var questionModelList = new List<object>();
