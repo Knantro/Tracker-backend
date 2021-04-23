@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using Tracker.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Tracker.Models;
@@ -19,10 +21,6 @@ namespace Tracker.Controllers {
                 p.ID.Equals(id)
             );
 
-            if (db.UserToken.FirstOrDefault(u => u.ParticipantID == id) != null) {
-                return BadRequest("You're already authorized");
-            }
-
             if (participant != null) {
                 string token = string.Empty;
                 do {
@@ -37,12 +35,18 @@ namespace Tracker.Controllers {
 
                 Researcher researcher = db.Researcher.First(r =>
                     r.ID == db.Project.First(p => p.ID == participant.ProjectID).ResearcherID);
+
+                Project project = db.Project.First(p => p.ID == participant.ProjectID);
                 
                 var participantInfo = new ParticipantInfoModel() {
                     Nickname = researcher.Nickname,
                     Email = researcher.Email,
                     PhoneNumber = researcher.PhoneNumber,
                     ID = participant.ID,
+                    DateEnd = project.DateEnd,
+                    DateStart = project.DateStart,
+                    NotificationTimeout = project.NotificationTimeout,
+                    IsNotificationsEnabled = project.IsNotificationsEnabled,
                     Token = token,
                     NotificationCountPerDay = participant.NotificationCountPerDay,
                     NotificationMinValueVariation = participant.NotificationMinValueVariation,
@@ -59,6 +63,9 @@ namespace Tracker.Controllers {
 
         [HttpPost]
         public ActionResult Logout(string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
             using TrackerContext db = new();
             UserToken ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             

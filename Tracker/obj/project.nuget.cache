@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "E4QFiAiP3REqO+kqHHfi2jWoWp86Ldbzcxx36hupd8+gndaEH3fSUHUVsmeOzroPFr1XhmedKSbFp12qIPqxbw==",
+  "dgSpecHash": "zeJ/VoC0J1zVMoH9IfHr+7R8HuOf8x8XYfY2FDr2JCaLPGcReyNPTCcJt1lYg0/bX4ZVNCb6zpAV5p9qStBA1g==",
   "success": true,
   "projectFilePath": "/home/knantro/dev/Tracker/Tracker/Tracker.csproj",
   "expectedPackageFiles": [
@@ -15,6 +15,7 @@
     "/home/knantro/.nuget/packages/k4os.compression.lz4/1.1.11/k4os.compression.lz4.1.1.11.nupkg.sha512",
     "/home/knantro/.nuget/packages/k4os.compression.lz4.streams/1.1.11/k4os.compression.lz4.streams.1.1.11.nupkg.sha512",
     "/home/knantro/.nuget/packages/k4os.hash.xxhash/1.0.6/k4os.hash.xxhash.1.0.6.nupkg.sha512",
+    "/home/knantro/.nuget/packages/microsoft.aspnet.cors/5.2.7/microsoft.aspnet.cors.5.2.7.nupkg.sha512",
     "/home/knantro/.nuget/packages/microsoft.aspnet.webapi.client/5.2.7/microsoft.aspnet.webapi.client.5.2.7.nupkg.sha512",
     "/home/knantro/.nuget/packages/microsoft.aspnet.webapi.core/5.2.7/microsoft.aspnet.webapi.core.5.2.7.nupkg.sha512",
     "/home/knantro/.nuget/packages/microsoft.aspnet.webapi.owin/5.2.7/microsoft.aspnet.webapi.owin.5.2.7.nupkg.sha512",
@@ -168,6 +169,16 @@
     "/home/knantro/.nuget/packages/microsoft.aspnetcore.app.ref/5.0.0/microsoft.aspnetcore.app.ref.5.0.0.nupkg.sha512"
   ],
   "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Microsoft.AspNet.Cors 5.2.7' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8' instead of the project target framework 'net5.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Microsoft.AspNet.Cors",
+      "targetGraphs": [
+        "net5.0"
+      ]
+    },
     {
       "code": "NU1701",
       "level": "Warning",

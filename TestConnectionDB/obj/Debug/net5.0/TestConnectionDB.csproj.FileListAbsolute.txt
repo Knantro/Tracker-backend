@@ -77,3 +77,8 @@
 /home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/Newtonsoft.Json.dll
 /home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/Newtonsoft.Json.Bson.dll
 /home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/Owin.dll
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/Tracker.deps.json
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/Tracker.runtimeconfig.json
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/Tracker.runtimeconfig.dev.json
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/Web.config
+/home/knantro/dev/Tracker/TestConnectionDB/bin/Debug/net5.0/System.Web.Cors.dll

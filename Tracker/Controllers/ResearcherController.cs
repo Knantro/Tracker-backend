@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Asn1.Cms;
 using Tracker.Models;
 using Tracker.Entities;
 
@@ -11,6 +14,10 @@ namespace Tracker.Controllers {
     public class ResearcherController : ControllerBase {
         [HttpPost]
         public ActionResult AddProject([FromBody] Project project, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -24,6 +31,8 @@ namespace Tracker.Controllers {
             if ((project.DateEnd is null || project.DateStart is null) && project.ProjectStatusID > 2) {
                 return BadRequest("Started or ended project should have dates of start and end of current project");
             }
+
+            project.ResearcherID = ut.ResearcherID;
 
             try {
                 db.Project.Add(project);
@@ -39,6 +48,10 @@ namespace Tracker.Controllers {
 
         [HttpPost]
         public ActionResult AddParticipant([FromBody] ParticipantModel participantModel, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -46,19 +59,29 @@ namespace Tracker.Controllers {
             }
 
             if (db.Project.FirstOrDefault(p => p.ID == participantModel.ProjectID) is null) {
-                return BadRequest("Project does not exists");
+                return BadRequest("Project does not exist");
+            }
+
+            if (db.Participant.FirstOrDefault(p => p.ID == participantModel.ID) != null) {
+                return BadRequest("Participant with current id already exists");
             }
 
             if (db.Project.First(p => p.ID == participantModel.ProjectID).ResearcherID != ut.ResearcherID) {
                 return BadRequest("Access denied");
             }
 
-            if (participantModel.TimeNotificationEnd <= participantModel.TimeNotificationStart) {
+            var timeNotificationEnd =
+                TimeSpan.Parse(participantModel.TimeNotificationEnd, CultureInfo.InvariantCulture);
+
+            var timeNotificationStart =
+                TimeSpan.Parse(participantModel.TimeNotificationStart, CultureInfo.InvariantCulture);
+
+            if (timeNotificationEnd <= timeNotificationStart) {
                 return BadRequest(
                     "Time of end sending notifications should be greater than time of start sending notifications");
             }
 
-            if ((participantModel.TimeNotificationEnd - participantModel.TimeNotificationStart).Minutes <
+            if ((timeNotificationEnd - timeNotificationStart).TotalMinutes <
                 participantModel.NotificationCountPerDay * participantModel.NotificationMinValueVariation) {
                 return BadRequest("Cannot send notifications properly by current parameters: " +
                                   $"No enough time for sending {participantModel.NotificationCountPerDay} notifications");
@@ -66,14 +89,17 @@ namespace Tracker.Controllers {
 
             try {
                 db.Participant.Add(new Participant() {
+                    ID = participantModel.ID,
                     ProjectID = participantModel.ProjectID,
                     NotificationCountPerDay = participantModel.NotificationCountPerDay,
                     NotificationMinValueVariation = participantModel.NotificationMinValueVariation,
-                    TimeNotificationEnd = participantModel.TimeNotificationEnd,
-                    TimeNotificationStart = participantModel.TimeNotificationStart,
+                    TimeNotificationEnd = timeNotificationEnd,
+                    TimeNotificationStart = timeNotificationStart,
                     ParticipantStatusID = db.ParticipantStatus
                         .First(s => s.StatusText == participantModel.ParticipantStatus).ID
                 });
+
+                db.SaveChanges();
             }
             catch (Exception ex) {
                 return BadRequest(ex);
@@ -86,6 +112,10 @@ namespace Tracker.Controllers {
 
         [HttpPost]
         public ActionResult AddAffectGridQuestion([FromBody] AffectGridQuestionAddModel model, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -118,8 +148,10 @@ namespace Tracker.Controllers {
                     QuestionNumber = model.QuestionNumber,
                     QuestionSubtext = model.QuestionSubtext,
                     QuestionText = model.QuestionText,
-                    QuestionTypeID = model.QuestionTypeID
+                    QuestionTypeID = 1
                 });
+
+                db.SaveChanges();
 
                 db.AffectGridQuestion.Add(new AffectGridQuestion() {
                     QuestionID = id,
@@ -152,6 +184,10 @@ namespace Tracker.Controllers {
 
         [HttpPost]
         public ActionResult AddChooseQuestion([FromBody] ChooseQuestionAddModel model, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -180,8 +216,10 @@ namespace Tracker.Controllers {
                     QuestionNumber = model.QuestionNumber,
                     QuestionSubtext = model.QuestionSubtext,
                     QuestionText = model.QuestionText,
-                    QuestionTypeID = model.QuestionTypeID
+                    QuestionTypeID = 2
                 });
+
+                db.SaveChanges();
 
                 db.ChooseQuestion.Add(new ChooseQuestion() {
                     QuestionID = id,
@@ -194,6 +232,8 @@ namespace Tracker.Controllers {
                         QuestionID = id
                     });
                 }
+
+                db.SaveChanges();
             }
             catch (Exception ex) {
                 return BadRequest(ex);
@@ -206,6 +246,10 @@ namespace Tracker.Controllers {
 
         [HttpPost]
         public ActionResult AddDiscreteSliderQuestion([FromBody] DiscreteSliderQuestionAddModel model, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -238,8 +282,10 @@ namespace Tracker.Controllers {
                     QuestionNumber = model.QuestionNumber,
                     QuestionSubtext = model.QuestionSubtext,
                     QuestionText = model.QuestionText,
-                    QuestionTypeID = model.QuestionTypeID
+                    QuestionTypeID = 3
                 });
+
+                db.SaveChanges();
 
                 db.DiscreteSliderQuestion.Add(new DiscreteSliderQuestion() {
                     DiscreteSliderMinValue = model.DiscreteSliderMinValue,
@@ -261,6 +307,10 @@ namespace Tracker.Controllers {
 
         [HttpPost]
         public ActionResult AddSliderQuestion([FromBody] SliderQuestionAddModel model, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -293,8 +343,10 @@ namespace Tracker.Controllers {
                     QuestionNumber = model.QuestionNumber,
                     QuestionSubtext = model.QuestionSubtext,
                     QuestionText = model.QuestionText,
-                    QuestionTypeID = model.QuestionTypeID
+                    QuestionTypeID = 4
                 });
+
+                db.SaveChanges();
 
                 db.SliderQuestion.Add(new SliderQuestion() {
                     SliderMaxValue = model.SliderMaxValue,
@@ -319,12 +371,16 @@ namespace Tracker.Controllers {
         //PUT
         [HttpPut]
         public ActionResult EditProject([FromBody] Project project, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
                 return Unauthorized("You're not authorised");
             }
-            
+
             if (db.Project.First(p => p.ID == project.ID).ResearcherID != ut.ResearcherID) {
                 return BadRequest("Access denied");
             }
@@ -343,7 +399,13 @@ namespace Tracker.Controllers {
             }
 
             try {
-                projectEdited = project;
+                projectEdited.Title = project.Title;
+                projectEdited.DateEnd = project.DateEnd;
+                projectEdited.DateStart = project.DateStart;
+                projectEdited.InstructionText = project.InstructionText;
+                projectEdited.NotificationTimeout = project.NotificationTimeout;
+                projectEdited.IsNotificationsEnabled = project.IsNotificationsEnabled;
+                projectEdited.NotificationCountPerDay = project.NotificationCountPerDay;
                 db.SaveChanges();
             }
             catch (Exception ex) {
@@ -356,29 +418,14 @@ namespace Tracker.Controllers {
 
         [HttpPut]
         public ActionResult EditParticipant([FromBody] ParticipantModel participantModel, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
                 return Unauthorized("You're not authorised");
-            }
-
-            if (db.Project.FirstOrDefault(p => p.ID == participantModel.ProjectID) is null) {
-                return BadRequest("Project does not exists");
-            }
-
-            if (db.Project.First(p => p.ID == participantModel.ProjectID).ResearcherID != ut.ResearcherID) {
-                return BadRequest("Access denied");
-            }
-
-            if (participantModel.TimeNotificationEnd <= participantModel.TimeNotificationStart) {
-                return BadRequest(
-                    "Time of end sending notifications should be greater than time of start sending notifications");
-            }
-
-            if ((participantModel.TimeNotificationEnd - participantModel.TimeNotificationStart).Minutes <
-                participantModel.NotificationCountPerDay * participantModel.NotificationMinValueVariation) {
-                return BadRequest("Cannot send notifications properly by current parameters: " +
-                                  $"No enough time for sending {participantModel.NotificationCountPerDay} notifications");
             }
 
             var participantEdited = db.Participant.FirstOrDefault(p => p.ID == participantModel.ID);
@@ -386,10 +433,36 @@ namespace Tracker.Controllers {
                 return BadRequest("Participant does not exist");
             }
 
+            if (db.Project.FirstOrDefault(p => p.ID == participantModel.ProjectID) is null) {
+                return BadRequest("Project does not exist");
+            }
+
+            if (db.Project.First(p => p.ID == participantModel.ProjectID).ResearcherID != ut.ResearcherID) {
+                return BadRequest("Access denied");
+            }
+
+            var timeNotificationEnd =
+                TimeSpan.Parse(participantModel.TimeNotificationEnd, CultureInfo.InvariantCulture);
+
+            var timeNotificationStart =
+                TimeSpan.Parse(participantModel.TimeNotificationStart, CultureInfo.InvariantCulture);
+
+            if (timeNotificationEnd <= timeNotificationStart) {
+                return BadRequest(
+                    "Time of end sending notifications should be greater than time of start sending notifications");
+            }
+
+            if ((timeNotificationEnd - timeNotificationStart).TotalMinutes <
+                participantModel.NotificationCountPerDay * participantModel.NotificationMinValueVariation) {
+                return BadRequest("Cannot send notifications properly by current parameters: " +
+                                  $"No enough time for sending {participantModel.NotificationCountPerDay} notifications");
+            }
+
             try {
+                participantEdited.ID = participantModel.ID;
                 participantEdited.ProjectID = participantModel.ProjectID;
-                participantEdited.TimeNotificationEnd = participantModel.TimeNotificationEnd;
-                participantEdited.TimeNotificationStart = participantModel.TimeNotificationStart;
+                participantEdited.TimeNotificationEnd = timeNotificationEnd;
+                participantEdited.TimeNotificationStart = timeNotificationStart;
                 participantEdited.NotificationCountPerDay = participantModel.NotificationCountPerDay;
                 participantEdited.NotificationMinValueVariation = participantModel.NotificationMinValueVariation;
                 participantEdited.ParticipantStatusID = db.ParticipantStatus
@@ -407,10 +480,19 @@ namespace Tracker.Controllers {
 
         [HttpPut]
         public ActionResult EditAffectGridQuestion([FromBody] AffectGridQuestionAddModel model, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
                 return Unauthorized("You're not authorised");
+            }
+
+            var questionEdited = db.Question.FirstOrDefault(p => p.ID == model.ID);
+            if (questionEdited is null) {
+                return BadRequest("Question does not exist");
             }
 
             if (db.Project.FirstOrDefault(p => p.ID == model.ProjectID) is null) {
@@ -430,11 +512,6 @@ namespace Tracker.Controllers {
                 return BadRequest("Question with current position number exists in project");
             }
 
-            var questionEdited = db.Question.FirstOrDefault(p => p.ID == model.ID);
-            if (questionEdited is null) {
-                return BadRequest("Question does not exist");
-            }
-
             var affectQuestionEdited = db.AffectGridQuestion.First(q => q.QuestionID == questionEdited.ID);
 
             try {
@@ -443,7 +520,7 @@ namespace Tracker.Controllers {
                 questionEdited.QuestionNumber = model.QuestionNumber;
                 questionEdited.QuestionSubtext = model.QuestionSubtext;
                 questionEdited.QuestionText = model.QuestionText;
-                questionEdited.QuestionTypeID = model.QuestionTypeID;
+                questionEdited.QuestionTypeID = 1;
 
                 affectQuestionEdited.DelimiterCount = model.DelimiterCount;
                 affectQuestionEdited.IsGridVisible = model.IsGridVisible;
@@ -473,10 +550,19 @@ namespace Tracker.Controllers {
 
         [HttpPut]
         public ActionResult EditChooseQuestion([FromBody] ChooseQuestionAddModel model, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
                 return Unauthorized("You're not authorised");
+            }
+
+            var questionEdited = db.Question.FirstOrDefault(p => p.ID == model.ID);
+            if (questionEdited is null) {
+                return BadRequest("Question does not exist");
             }
 
             if (db.Project.FirstOrDefault(p => p.ID == model.ProjectID) is null) {
@@ -492,11 +578,6 @@ namespace Tracker.Controllers {
                 return BadRequest("Question with current position number exists in project");
             }
 
-            var questionEdited = db.Question.FirstOrDefault(p => p.ID == model.ID);
-            if (questionEdited is null) {
-                return BadRequest("Question does not exist");
-            }
-
             var chooseQuestion = db.ChooseQuestion.First(q => q.QuestionID == questionEdited.ID);
 
             try {
@@ -505,17 +586,26 @@ namespace Tracker.Controllers {
                 questionEdited.QuestionNumber = model.QuestionNumber;
                 questionEdited.QuestionSubtext = model.QuestionSubtext;
                 questionEdited.QuestionText = model.QuestionText;
-                questionEdited.QuestionTypeID = model.QuestionTypeID;
+                questionEdited.QuestionTypeID = 2;
 
                 chooseQuestion.IsSingleChoice = model.IsSingleChoice;
 
-                var multipleChooseQuestionVariant =
-                    db.MultipleChooseQuestionVariant.Where(q => q.QuestionID == questionEdited.ID).ToList();
                 int index = 0;
-
+                var multipleChooseQuestionVariants = new List<MultipleChooseQuestionVariant>();
                 foreach (var item in model.AnswerVariants) {
-                    multipleChooseQuestionVariant[index++].AnswerText = item;
+                    multipleChooseQuestionVariants.Add(new MultipleChooseQuestionVariant());
+                    multipleChooseQuestionVariants[index].AnswerText = item;
+                    multipleChooseQuestionVariants[index].QuestionID = questionEdited.ID;
+                    index++;
                 }
+                db.MultipleChooseQuestionVariant.RemoveRange(
+                    db.MultipleChooseQuestionVariant.Where(q => q.QuestionID == questionEdited.ID));
+
+                db.SaveChanges();                
+                
+                db.MultipleChooseQuestionVariant.AddRange(multipleChooseQuestionVariants);
+
+                db.SaveChanges();
             }
             catch (Exception ex) {
                 return BadRequest(ex);
@@ -528,10 +618,19 @@ namespace Tracker.Controllers {
 
         [HttpPut]
         public ActionResult EditDiscreteSliderQuestion([FromBody] DiscreteSliderQuestionAddModel model, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
                 return Unauthorized("You're not authorised");
+            }
+
+            var questionEdited = db.Question.FirstOrDefault(p => p.ID == model.ID);
+            if (questionEdited is null) {
+                return BadRequest("Question does not exist");
             }
 
             if (db.Project.FirstOrDefault(p => p.ID == model.ProjectID) is null) {
@@ -551,11 +650,6 @@ namespace Tracker.Controllers {
                 return BadRequest("Question with current position number exists in project");
             }
 
-            var questionEdited = db.Question.FirstOrDefault(p => p.ID == model.ID);
-            if (questionEdited is null) {
-                return BadRequest("Question does not exist");
-            }
-
             var discreteSliderEdited = db.DiscreteSliderQuestion.First(q => q.QuestionID == questionEdited.ID);
 
             try {
@@ -564,7 +658,7 @@ namespace Tracker.Controllers {
                 questionEdited.QuestionNumber = model.QuestionNumber;
                 questionEdited.QuestionSubtext = model.QuestionSubtext;
                 questionEdited.QuestionText = model.QuestionText;
-                questionEdited.QuestionTypeID = model.QuestionTypeID;
+                questionEdited.QuestionTypeID = 3;
 
                 discreteSliderEdited.DiscreteSliderMinValue = model.DiscreteSliderMinValue;
                 discreteSliderEdited.DiscreteSliderMaxValue = model.DiscreteSliderMaxValue;
@@ -583,10 +677,19 @@ namespace Tracker.Controllers {
 
         [HttpPut]
         public ActionResult EditSliderQuestion([FromBody] SliderQuestionAddModel model, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
                 return Unauthorized("You're not authorised");
+            }
+
+            var questionEdited = db.Question.FirstOrDefault(p => p.ID == model.ID);
+            if (questionEdited is null) {
+                return BadRequest("Question does not exist");
             }
 
             if (db.Project.FirstOrDefault(p => p.ID == model.ProjectID) is null) {
@@ -606,11 +709,6 @@ namespace Tracker.Controllers {
                 return BadRequest("Question with current position number exists in project");
             }
 
-            var questionEdited = db.Question.FirstOrDefault(p => p.ID == model.ID);
-            if (questionEdited is null) {
-                return BadRequest("Question does not exist");
-            }
-
             var sliderEdited = db.SliderQuestion.First(q => q.QuestionID == questionEdited.ID);
 
             try {
@@ -619,7 +717,7 @@ namespace Tracker.Controllers {
                 questionEdited.QuestionNumber = model.QuestionNumber;
                 questionEdited.QuestionSubtext = model.QuestionSubtext;
                 questionEdited.QuestionText = model.QuestionText;
-                questionEdited.QuestionTypeID = model.QuestionTypeID;
+                questionEdited.QuestionTypeID = 4;
 
                 sliderEdited.SliderMaxValue = model.SliderMaxValue;
                 sliderEdited.SliderMinValue = model.SliderMinValue;
@@ -640,6 +738,10 @@ namespace Tracker.Controllers {
 
         [HttpDelete]
         public ActionResult DeleteParticipant(int id, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -651,7 +753,7 @@ namespace Tracker.Controllers {
             if (participant is null) {
                 return BadRequest("Participant does not exist");
             }
-            
+
             if (db.Project.First(p => p.ID == participant.ProjectID).ResearcherID != ut.ResearcherID) {
                 return BadRequest("Access denied");
             }
@@ -668,9 +770,13 @@ namespace Tracker.Controllers {
 
             return Ok("Participant deleted successfully");
         }
-        
+
         [HttpDelete]
         public ActionResult DeleteProject(int id, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -682,7 +788,7 @@ namespace Tracker.Controllers {
             if (project is null) {
                 return BadRequest("Project does not exist");
             }
-            
+
             if (project.ResearcherID != ut.ResearcherID) {
                 return BadRequest("Access denied");
             }
@@ -699,9 +805,13 @@ namespace Tracker.Controllers {
 
             return Ok("Project deleted successfully");
         }
-        
+
         [HttpDelete]
         public ActionResult DeleteQuestion(int id, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -713,7 +823,7 @@ namespace Tracker.Controllers {
             if (question is null) {
                 return BadRequest("Question does not exist");
             }
-            
+
             if (db.Project.First(q => q.ID == question.ProjectID).ResearcherID != ut.ResearcherID) {
                 return BadRequest("Access denied");
             }
@@ -733,6 +843,10 @@ namespace Tracker.Controllers {
 
         [HttpGet]
         public ActionResult GetAllProjects(string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -746,6 +860,10 @@ namespace Tracker.Controllers {
 
         [HttpGet]
         public ActionResult GetInfoForProjectById(int id, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
+
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -810,8 +928,8 @@ namespace Tracker.Controllers {
                     ParticipantStatus = db.ParticipantStatus.First(s => s.ID == item.ParticipantStatusID).StatusText,
                     NotificationCountPerDay = item.NotificationCountPerDay,
                     NotificationMinValueVariation = item.NotificationMinValueVariation,
-                    TimeNotificationEnd = item.TimeNotificationEnd,
-                    TimeNotificationStart = item.TimeNotificationStart,
+                    TimeNotificationEnd = item.TimeNotificationEnd.ToString(),
+                    TimeNotificationStart = item.TimeNotificationStart.ToString(),
                     ParticipantAnswerModelList = participantAnswerModelList
                 });
             }
@@ -831,6 +949,8 @@ namespace Tracker.Controllers {
                     InstructionText = item.InstructionText,
                     DateStart = item.DateStart,
                     DateEnd = item.DateEnd,
+                    Questions = MakeListQuestionModel(db.Question.Where(q => q.ProjectID == item.ID).ToList()),
+                    ParticipantInfoList = MakeListParticipantModel(item),
                     NotificationCountPerDay = item.NotificationCountPerDay,
                     NotificationTimeout = item.NotificationTimeout,
                     IsNotificationsEnabled = item.IsNotificationsEnabled,

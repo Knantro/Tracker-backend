@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Web.Http.Results;
 using Tracker.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,9 @@ namespace Tracker.Controllers {
     public class ParticipantController : ControllerBase {
         [HttpGet]
         public ActionResult GetQuestions(string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
@@ -22,31 +26,34 @@ namespace Tracker.Controllers {
             if (participant is null) {
                 return BadRequest("Cannot find participant with current id");
             }
-            
+
             var project = db.Project.FirstOrDefault(p => p.ID == participant.ProjectID);
             if (project is null) {
                 return BadRequest("Cannot find project for current participant");
             }
-            
+
             var questions = db.Question.Where(q => q.ProjectID == project.ID).ToList();
-            
-            
+
+
             return Ok(MakeListQuestionModel(questions));
         }
 
         [HttpPost]
-        public ActionResult SendAnswer([FromBody]ParticipantAnswer model, string token) {
+        public ActionResult SendAnswer([FromBody] ParticipantAnswer model, string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
             using TrackerContext db = new();
             var ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             if (ut is null) {
                 return Unauthorized("You're not authorized");
             }
-            
+
             var participant = db.Participant.FirstOrDefault(p => p.ID == ut.ParticipantID);
             if (participant is null) {
                 return BadRequest("Cannot find participant with current id");
             }
-            
+
             var project = db.Project.FirstOrDefault(p => p.ID == participant.ProjectID);
             if (project is null) {
                 return BadRequest("Cannot find project for current participant");
@@ -56,6 +63,8 @@ namespace Tracker.Controllers {
             if (question is null) {
                 return BadRequest("Question not found");
             }
+
+            model.AnswerDate = DateTime.Now;
 
             try {
                 db.ParticipantAnswer.Add(model);
@@ -78,6 +87,7 @@ namespace Tracker.Controllers {
                     case "AffectGrid":
                         var affectGridQuestion = db.AffectGridQuestion.First(q => q.QuestionID == item.ID);
                         questionModelList.Add(new AffectGridQuestionModel() {
+                            ID = item.ID,
                             QuestionType = type,
                             QuestionNumber = item.QuestionNumber,
                             QuestionSubtext = item.QuestionSubtext,
@@ -106,6 +116,7 @@ namespace Tracker.Controllers {
                             .Select(p => p.AnswerText)
                             .ToList();
                         questionModelList.Add(new ChooseQuestionModel() {
+                            ID = item.ID,
                             QuestionType = type,
                             QuestionNumber = item.QuestionNumber,
                             QuestionSubtext = item.QuestionSubtext,
@@ -118,6 +129,7 @@ namespace Tracker.Controllers {
                     case "DiscreteSlider":
                         var discreteSliderQuestion = db.DiscreteSliderQuestion.First(q => q.QuestionID == item.ID);
                         questionModelList.Add(new DiscreteSliderQuestionModel() {
+                            ID = item.ID,
                             QuestionType = type,
                             QuestionNumber = item.QuestionNumber,
                             QuestionSubtext = item.QuestionSubtext,
@@ -125,12 +137,14 @@ namespace Tracker.Controllers {
                             InstructionText = item.InstructionText,
                             DiscreteSliderMaxValue = discreteSliderQuestion.DiscreteSliderMaxValue,
                             DiscreteSliderMinValue = discreteSliderQuestion.DiscreteSliderMinValue,
-                            ScaleTexts = discreteSliderQuestion.ScaleText.Split("#$%^", StringSplitOptions.RemoveEmptyEntries).ToList()
+                            ScaleTexts = discreteSliderQuestion.ScaleText
+                                .Split("#$%^", StringSplitOptions.RemoveEmptyEntries).ToList()
                         });
                         break;
                     case "Slider":
                         var sliderQuestion = db.SliderQuestion.First(q => q.QuestionID == item.ID);
                         questionModelList.Add(new SliderQuestionModel() {
+                            ID = item.ID,
                             QuestionType = type,
                             QuestionNumber = item.QuestionNumber,
                             QuestionSubtext = item.QuestionSubtext,

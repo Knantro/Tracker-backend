@@ -1,7 +1,7 @@
 using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,14 +19,9 @@ namespace Tracker {
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services) {
-            // services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            //         .AddCookie(options =>
-            //         {
-            //             options.LoginPath = new Microsoft.AspNetCore.Http.PathString("api/Login");
-            //         });
-            //
             services.AddScoped<Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptions, DbContextOptions<TrackerContext>>();
             services.AddControllers();
+            services.AddCors();
             services.AddMvc(c => c.Conventions.Add(new ApiExplorerIgnores()));
             services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo {Title = "Tracker", Version = "v1"}); });
             services.AddDbContext<TrackerContext>(options =>
@@ -41,12 +36,20 @@ namespace Tracker {
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tracker v1"));
             }
+
+            app.Use(async (context, next) =>
+            {
+                context.Response.OnStarting(async o => {
+                    if (o is HttpContext ctx) {
+                        ctx.Response.Headers["Access-Control-Allow-Origin"] = "*";
+                    }
+                }, context);
+                await next();
+            });
             app.UseRouting();
             
             app.UseAuthorization();
 
-            app.UseHttpsRedirection();
-            
             app.UseAuthentication();
             
             app.UseEndpoints(endpoints => {

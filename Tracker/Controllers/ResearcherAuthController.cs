@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Tracker.Models;
 using Tracker.Entities;
@@ -21,9 +22,6 @@ namespace Tracker.Controllers {
             );
 
             if (researcher != null) {
-                if (db.UserToken.FirstOrDefault(u => u.ResearcherID == researcher.ID) != null) {
-                    return BadRequest("You're already authorized");
-                }
                 string token = string.Empty;
                 do {
                     token = TokenManagement.GenerateToken();
@@ -49,6 +47,9 @@ namespace Tracker.Controllers {
         
         [HttpPost]
         public ActionResult Logout(string token) {
+            if (token.Length != TokenManagement.TokenLength) {
+                token = WebUtility.UrlDecode(token);
+            }
             using TrackerContext db = new();
             UserToken ut = db.UserToken.FirstOrDefault(t => t.Token.Equals(token));
             
